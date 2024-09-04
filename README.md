@@ -24,8 +24,6 @@ This project demonstrates a DIY inverter, battery, and monitoring system with ov
 
 ## Code Snippet for ESPHome Configuration
 
-
-
 The following YAML code use pzemdc esphome library and comunicate with pzem017
 
 ```yaml
@@ -106,7 +104,7 @@ button:
     on_press:
       then:
         - pzemdc.reset_energy: pzemdc_1
-
+```
 
 The following YAML code use just modbus for comunication with pzem017 instead of esphome pzemdc library
 here you can see how to change schunt current range to 300A (adjustable based on the shunt value in use):
