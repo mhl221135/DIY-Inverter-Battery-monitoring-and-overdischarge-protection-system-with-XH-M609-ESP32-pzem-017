@@ -17,7 +17,11 @@ This project demonstrates a DIY inverter, battery, and monitoring system with ov
 - **ESPHome integration** for remote monitoring and control via customizable configuration.
 - **Modbus communication** for adjusting the current range of the system based on the shunt used.
 
-## WIRING
+## Wiring Diagram
+
+![Wiring Diagram](./wiring.png)
+
+
 ## Code Snippet for ESPHome Configuration
 
 
