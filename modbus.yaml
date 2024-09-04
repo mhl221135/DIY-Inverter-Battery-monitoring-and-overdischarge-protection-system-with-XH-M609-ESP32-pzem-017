@@ -1,0 +1,130 @@
+esphome:
+  name: agm-bms-modbus
+  platform: ESP32
+  board: lolin32
+
+wifi:
+  networks:
+    - ssid: "ssidname"
+      password: "passwordforwifi"
+
+captive_portal:
+
+ota:
+  platform: esphome
+  password: "optionalpassword"  
+
+logger:
+
+web_server:
+  port: 80
+
+uart:
+  id: uart4
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 9600
+  stop_bits: 2
+
+modbus:
+  id: modbus1
+  uart_id: uart4
+
+modbus_controller:
+  - id: modbus_device
+    address: 0x01   # Address of the Modbus slave device on the bus
+    modbus_id: modbus1
+    setup_priority: -10
+
+sensor:
+  - platform: modbus_controller
+    modbus_controller_id: modbus_device
+    id: pzem_high_voltage_alarm
+    name: "High Voltage Alarm Threshold"
+    address: 0x0000
+    unit_of_measurement: "V"
+    register_type: holding
+    value_type: U_WORD
+    filters:
+      - multiply: 0.01
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_device
+    id: pzem_low_voltage_alarm
+    name: "Low Voltage Alarm Threshold"
+    address: 0x0001
+    unit_of_measurement: "V"
+    register_type: holding
+    value_type: U_WORD
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_device
+    id: pzem_slave_address
+    name: "Slave Address"
+    address: 0x0002
+    unit_of_measurement: ""
+    register_type: holding
+    value_type: U_WORD
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_device
+    id: pzem_current_range
+    name: "Current Range"
+    address: 0x0003
+    unit_of_measurement: "A"
+    register_type: holding
+    value_type: U_WORD
+    filters:
+      - lambda: |-
+          if (x == 0) return 100;
+          else if (x == 1) return 50;
+          else if (x == 2) return 200;
+          else if (x == 3) return 300;
+          else return x;
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_device
+    name: "Current Range Setting"
+    address: 0x0003
+    register_type: holding
+    value_type: U_WORD
+    unit_of_measurement: "bit"
+
+switch:
+  - platform: modbus_controller
+    modbus_controller_id: modbus_device
+    name: "Reset Energy"
+    address: 0x42
+    register_type: holding
+    write_lambda: |-
+      return 1;
+
+button:
+  - platform: template
+    name: "Set Current Range to 300A"
+    on_press:
+      then:
+        - lambda: |-
+            std::vector<uint16_t> current_range_payload = {0x0003};  // 300A value change to your schunt
+
+            esphome::modbus_controller::ModbusController *controller = id(modbus_device);
+            esphome::modbus_controller::ModbusCommandItem set_current_range_command =
+                esphome::modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x0003, current_range_payload[0]);
+
+            controller->queue_command(set_current_range_command);
+            ESP_LOGI("ModbusLambda", "Set Current Range to 300A");
+
+  - platform: template
+    name: "Set ADRESS"
+    on_press:
+      then:
+        - lambda: |-
+            std::vector<uint16_t> current_range_payload = {0x01};  // adress change command
+
+            esphome::modbus_controller::ModbusController *controller = id(modbus_device);
+            esphome::modbus_controller::ModbusCommandItem set_current_range_command =
+                esphome::modbus_controller::ModbusCommandItem::create_write_single_command(controller, 0x0002, current_range_payload[0]);
+
+            controller->queue_command(set_current_range_command);
+            ESP_LOGI("ModbusLambda", "Set ADRESS");
+

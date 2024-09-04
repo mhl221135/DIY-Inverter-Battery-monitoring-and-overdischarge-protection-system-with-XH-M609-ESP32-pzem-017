@@ -1,0 +1,77 @@
+esphome:
+  name: agm-bms
+  platform: ESP32
+  board: lolin32
+
+wifi:
+  networks:
+    - ssid: "ssidname"
+      password: "passwordforwifi"
+
+captive_portal:
+
+ota:
+  platform: esphome
+  password: "optionalpassword"  
+
+logger:
+
+
+web_server:
+  port: 80
+
+
+uart:
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 9600
+
+sensor:
+  - platform: uptime
+    name: "Uptime"
+    update_interval: 5s
+
+  - platform: wifi_signal
+    name: "WiFi strenght"
+    update_interval: 5s
+
+  - platform: pzemdc
+    address: 0x01 #adress of pzemdc device 
+    voltage:
+      name: "DC-Voltage"
+      id: DC_Voltage
+      accuracy_decimals: 3
+    current:
+      name: "DC-Current"
+      id: DC_Current
+      accuracy_decimals: 3
+    power:
+      name: "DC-Power"
+      id: DC_Power
+      accuracy_decimals: 2
+    energy:
+      name: "DC-Energy"
+      id: DC_Energy
+      accuracy_decimals: 3
+    id: pzemdc_1
+    update_interval: 1s
+
+  # Battery Percentage Sensor
+  - platform: template
+    name: "Battery SOC %"
+    id: Battery_Percentage
+    lambda: |-
+      if (id(DC_Voltage).state < 10.5) return 0.0;
+      if (id(DC_Voltage).state > 12.9) return 100.0;
+      return (id(DC_Voltage).state - 10.5) / (12.9 - 10.5) * 100.0;
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+
+button:
+  - platform: template
+    name: "Reset energy count"
+    icon: "mdi:restart"
+    id: pzemdc_reset_energy
+    on_press:
+      then:
+        - pzemdc.reset_energy: pzemdc_1
